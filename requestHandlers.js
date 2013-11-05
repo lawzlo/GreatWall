@@ -2,48 +2,62 @@ var exec = require("child_process").exec;
 var querystring = require("querystring");
 var fs = require("fs");
 var formidable = require("formidable");
-function start(response) {
-	var wall = getWall();
-	console.log("wall is: " + wall);
-	console.log("Request handler 'start' was called.");
-	var body = '<html>'+
+var util = require('util');
+var wall = "";
+var body = '<html>'+
     '<head>'+
     '<meta http-equiv="Content-Type" content="text/html; '+
     'charset=UTF-8" />'+
     '</head>'+
     '<body>'+
-    '<div id=wall>'+
-    wall+
-    '</div>'+
-    '<form action="/sendWords" enctype="multipart/form-data" '+
+    '<div id=wall>'
+
+var body1 = '</div>'+
+    '<form action="/saveWord" enctype="multipart/form-data" '+
     'method="post">'+
     '<input type="text" name="words">'+
     '<input type="submit" value="biang!" />'+
     '</form>'+
     '</body>'+
     '</html>';
+var file_path = "wall.txt";
 
-    response.writeHead(200, {"Content-Type": "text/html"});
-    response.write(body);
-    response.end();
+function start(response) {
+    showWall(response);
+	console.log("Request handler 'start' was called.");
 }
 
 function sendWords(response, request) {
+	saveWord(response, request);
+	showWall(response);
 	console.log("Request handler 'sendWords' was called.");
-	response.writeHead(200, {"Content-Type" : "text/html"});
-	response.write("Babababababba<br/>");
-	response.end();
 }
 
-function getWall() {
+function saveWord(response, request) {
+    var form = new formidable.IncomingForm();
+
+    form.parse(request, function(err, fields, files) {
+      fs.appendFileSync(file_path, "\n" + fields['words'] + "</br>");
+      showWall(response);
+    });
+}
+
+function showWall(response) {
 	console.log("Request handler 'getWall' was called.");
-	fs.readFile("/Users/tanlin/Developer/NodeJS/GreatWall/wall.txt", "utf8", function(error, data) {
+	fs.readFile(file_path, "utf8", function(error, data) {
 		if (error) {
-			return console.log(error);
+			console.log(error);
 		}
+		console.log("Async loading file.");
 		console.log(data);
-		return data;
+		response.writeHead(200, {"Content-Type": "text/html"});
+    	response.write(body);
+    	response.write(data);
+    	response.write(body1);
+    	response.end();
 	});
 }
 exports.start = start;
-exports.getWall = getWall;
+exports.showWall = showWall;
+exports.sendWords = sendWords;
+exports.saveWord = saveWord;
